@@ -4401,7 +4401,7 @@ do
         end
 
         local function Round(Value)
-			if Slider.Step then
+			if Slider.Step and Slider.Step > 0 then
 				Value = math.round(Value / Slider.Step) * Slider.step
 			end
 			
