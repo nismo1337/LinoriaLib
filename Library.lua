@@ -4229,7 +4229,7 @@ do
             Min = Info.Min;
             Max = Info.Max;
             Rounding = Info.Rounding;
-	        Step = tonumber(Info.Steps) or nil;
+	        Step = tonumber(Info.Step) or nil;
             MaxSize = 232;
             Type = "Slider";
             Visible = if typeof(Info.Visible) == "boolean" then Info.Visible else true;
