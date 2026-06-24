@@ -69,6 +69,7 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 ScreenGui.DisplayOrder = 999
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ScreenInsets = Enum.ScreenInsets.None
 ParentUI(ScreenGui)
 
 local ModalElement = Instance.new("TextButton")
@@ -1361,84 +1362,30 @@ do
         do
             local KeybindsToggleContainer = Library:Create("Frame", {
                 BackgroundTransparency = 1;
-                Size = UDim2.new(1, 0, 0, 18);
+                Size = UDim2.new(1, 0, 0, 16);
                 Visible = false;
                 ZIndex = 110;
                 Parent = Library.KeybindContainer;
             })
 
-            local KeybindsToggleOuter = Library:Create("Frame", {
-                BackgroundColor3 = Color3.new(0, 0, 0);
-                BorderColor3 = Color3.new(0, 0, 0);
-                Size = UDim2.new(0, 13, 0, 13);
-                Position = UDim2.new(0, 0, 0, 6);
-                Visible = true;
-                ZIndex = 110;
-                Parent = KeybindsToggleContainer;
-            })
-            Library:MakeRounded(KeybindsToggleOuter, UDim.new(0, 2))
-
-            Library:AddToRegistry(KeybindsToggleOuter, {
-                BorderColor3 = "Black";
-            })
-
-            local KeybindsToggleInner = Library:Create("Frame", {
-                BackgroundColor3 = Library.MainColor;
-                BorderColor3 = Library.OutlineColor;
-                BorderMode = Enum.BorderMode.Inset;
-                Size = UDim2.new(1, 0, 1, 0);
-                ZIndex = 111;
-                Parent = KeybindsToggleOuter;
-            })
-            Library:MakeRounded(KeybindsToggleInner, UDim.new(0, 2))
-
-            Library:AddToRegistry(KeybindsToggleInner, {
-                BackgroundColor3 = "MainColor";
-                BorderColor3 = "OutlineColor";
-            })
-
             local KeybindsToggleLabel = Library:CreateLabel({
                 BackgroundTransparency = 1;
-                Size = UDim2.new(0, 216, 1, 0);
-                Position = UDim2.new(1, 6, 0, -1);
-                TextSize = 14;
+                Size = UDim2.new(1, -8, 1, 0);
+                Position = UDim2.new(0, 0, 0, 0);
+                TextSize = 13;
                 Text = "";
                 TextXAlignment = Enum.TextXAlignment.Left;
                 ZIndex = 111;
-                Parent = KeybindsToggleInner;
+                Parent = KeybindsToggleContainer;
             })
 
-            Library:Create("UIListLayout", {
-                Padding = UDim.new(0, 4);
-                FillDirection = Enum.FillDirection.Horizontal;
-                HorizontalAlignment = Enum.HorizontalAlignment.Right;
-                VerticalAlignment = Enum.VerticalAlignment.Center;
-                SortOrder = Enum.SortOrder.LayoutOrder;
-                Parent = KeybindsToggleLabel;
+            Library:AddToRegistry(KeybindsToggleLabel, {
+                TextColor3 = "FontColor";
             })
-
-            local KeybindsToggleRegion = Library:Create("Frame", {
-                BackgroundTransparency = 1;
-                Size = UDim2.new(0, 170, 1, 0);
-                ZIndex = 113;
-                Parent = KeybindsToggleOuter;
-            })
-
-            Library:OnHighlight(KeybindsToggleRegion, KeybindsToggleOuter,
-                { BorderColor3 = "AccentColor" },
-                { BorderColor3 = "Black" },
-                function()
-                    return true
-                end
-            )
 
             function KeybindsToggle:Display(State)
-                KeybindsToggleInner.BackgroundColor3 = State and Library.AccentColor or Library.MainColor
-                KeybindsToggleInner.BorderColor3 = State and Library.AccentColorDark or Library.OutlineColor
+                -- tint label with accent when toggled on
                 KeybindsToggleLabel.TextColor3 = State and Library.AccentColor or Library.FontColor
-
-                Library.RegistryMap[KeybindsToggleInner].Properties.BackgroundColor3 = State and "AccentColor" or "MainColor"
-                Library.RegistryMap[KeybindsToggleInner].Properties.BorderColor3 = State and "AccentColorDark" or "OutlineColor"
                 Library.RegistryMap[KeybindsToggleLabel].Properties.TextColor3 = State and "AccentColor" or "FontColor"
             end
 
@@ -1452,23 +1399,13 @@ do
 
             function KeybindsToggle:SetNormal(bool)
                 KeybindsToggle.Normal = bool
-
-                KeybindsToggleOuter.BackgroundTransparency = if KeybindsToggle.Normal then 1 else 0
-
-                KeybindsToggleInner.BackgroundTransparency = if KeybindsToggle.Normal then 1 else 0
-                KeybindsToggleInner.BorderSizePixel = if KeybindsToggle.Normal then 0 else 1
-
-                KeybindsToggleLabel.Position = if KeybindsToggle.Normal then UDim2.new(1, -13, 0, -1) else UDim2.new(1, 6, 0, -1)
             end
 
-            KeyPicker.DoClick = function(...) end --// make luau lsp shut up
-            Library:GiveSignal(KeybindsToggleRegion.InputBegan:Connect(function(Input)
-                if Library.Unloaded then
-                    return
-                end
-
+            KeyPicker.DoClick = function(...) end
+            Library:GiveSignal(KeybindsToggleContainer.InputBegan:Connect(function(Input)
+                if Library.Unloaded then return end
                 if KeybindsToggle.Normal then return end
-                                        
+
                 if (Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame()) or Input.UserInputType == Enum.UserInputType.Touch then
                     KeyPicker.Toggled = not KeyPicker.Toggled
                     KeyPicker:DoClick()
@@ -1622,6 +1559,7 @@ do
             end
 
             local State = KeyPicker:GetState()
+            local HasBinding = KeyPicker.Value ~= nil and KeyPicker.Value ~= "None" and KeyPicker.Value ~= ""
             local ShowToggle = Library.ShowToggleFrameInKeybinds and KeyPicker.Mode == "Toggle"
 
             if KeyPicker.SyncToggleState and ParentObj.Value ~= State then
@@ -1631,9 +1569,14 @@ do
             if KeybindsToggle.Loaded then
                 KeybindsToggle:SetNormal(not ShowToggle)
 
-                KeybindsToggle:SetVisibility(true)
-                KeybindsToggle:SetText(string.format("[%s] %s (%s)", tostring(KeyPicker.DisplayValue), Info.Text, KeyPicker.Mode))
-                KeybindsToggle:Display(State)
+                if HasBinding then
+                    local modeLabel = KeyPicker.Mode:lower()
+                    KeybindsToggle:SetVisibility(true)
+                    KeybindsToggle:SetText(string.format("%s [%s]", Info.Text, modeLabel))
+                    KeybindsToggle:Display(State)
+                else
+                    KeybindsToggle:SetVisibility(false)
+                end
             end
 
             local YSize = 0
@@ -1641,10 +1584,10 @@ do
 
             for _, Frame in next, Library.KeybindContainer:GetChildren() do
                 if Frame:IsA("Frame") and Frame.Visible then
-                    YSize = YSize + 18
+                    YSize = YSize + 16
                     local Label = Frame:FindFirstChild("TextLabel", true)
                     if not Label then continue end
-                    
+
                     local LabelSize = Label.TextBounds.X + 20
                     if (LabelSize > XSize) then
                         XSize = LabelSize
@@ -1652,8 +1595,8 @@ do
                 end
             end
 
-            Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 10, 220), 0, (YSize + 23 + 6) * DPIScale)
-            UpdateMenuOuterPos()
+            Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 16, 160), 0, YSize + 20 + (YSize > 0 and 4 or 0))
+            Library.KeybindFrame.Visible = YSize > 0
         end
 
         function KeyPicker:GetState()
@@ -1996,7 +1939,7 @@ do
             BackgroundColor3 = ColorPicker.Value;
             BorderColor3 = Library:GetDarkerColor(ColorPicker.Value);
             BorderMode = Enum.BorderMode.Inset;
-            Size = UDim2.new(0, 28, 0, 15);
+            Size = UDim2.new(0, 21, 0, 11);
             ZIndex = 6;
             Parent = ToggleLabel;
         })
@@ -2006,7 +1949,7 @@ do
         -- local CheckerFrame = 
         Library:Create("ImageLabel", {
             BorderSizePixel = 0;
-            Size = UDim2.new(0, 27, 0, 13);
+            Size = UDim2.new(0, 20, 0, 9);
             ZIndex = 5;
             Image = CustomImageManager.GetAsset("Checker");
             Visible = not not Info.Transparency;
@@ -2023,7 +1966,7 @@ do
             BackgroundColor3 = Color3.new(1, 1, 1);
             BorderColor3 = Color3.new(0, 0, 0);
             Position = UDim2.fromOffset(DisplayFrame.AbsolutePosition.X, DisplayFrame.AbsolutePosition.Y + 18),
-            Size = UDim2.fromOffset(230, Info.Transparency and 271 or 253);
+            Size = UDim2.fromOffset(230, Info.Transparency and 220 or 203);
             Visible = false;
             ZIndex = 15;
             Parent = ScreenGui,
@@ -2055,7 +1998,7 @@ do
         local SatVibMapOuter = Library:Create("Frame", {
             BorderColor3 = Color3.new(0, 0, 0);
             Position = UDim2.new(0, 4, 0, 25);
-            Size = UDim2.new(0, 200, 0, 200);
+            Size = UDim2.new(0, 200, 0, 150);
             ZIndex = 17;
             Parent = PickerFrameInner;
         })
@@ -2100,7 +2043,7 @@ do
         local HueSelectorOuter = Library:Create("Frame", {
             BorderColor3 = Color3.new(0, 0, 0);
             Position = UDim2.new(0, 208, 0, 25);
-            Size = UDim2.new(0, 15, 0, 200);
+            Size = UDim2.new(0, 15, 0, 150);
             ZIndex = 17;
             Parent = PickerFrameInner;
         })
@@ -2124,7 +2067,7 @@ do
 
         local HueBoxOuter = Library:Create("Frame", {
             BorderColor3 = Color3.new(0, 0, 0);
-            Position = UDim2.fromOffset(4, 228),
+            Position = UDim2.fromOffset(4, 177),
             Size = UDim2.new(0.5, -6, 0, 20),
             ZIndex = 18,
             Parent = PickerFrameInner;
@@ -2169,7 +2112,7 @@ do
         Library:ApplyTextStroke(HueBox)
 
         local RgbBoxBase = Library:Create(HueBoxOuter:Clone(), {
-            Position = UDim2.new(0.5, 2, 0, 228),
+            Position = UDim2.new(0.5, 2, 0, 177),
             Size = UDim2.new(0.5, -6, 0, 20),
             Parent = PickerFrameInner
         })
@@ -2185,7 +2128,7 @@ do
         if Info.Transparency then 
             TransparencyBoxOuter = Library:Create("Frame", {
                 BorderColor3 = Color3.new(0, 0, 0);
-                Position = UDim2.fromOffset(4, 251);
+                Position = UDim2.fromOffset(4, 199);
                 Size = UDim2.new(1, -8, 0, 15);
                 ZIndex = 19;
                 Parent = PickerFrameInner;
@@ -6153,59 +6096,53 @@ end
 do
     local KeybindOuter = Library:Create("Frame", {
         AnchorPoint = Vector2.new(0, 0.5);
-        BorderColor3 = Color3.new(0, 0, 0);
+        BackgroundTransparency = 1;
+        BorderSizePixel = 0;
         Position = UDim2.new(0, 10, 0.5, 0);
         Size = UDim2.new(0, 210, 0, 20);
         Visible = false;
         ZIndex = 100;
         Parent = ScreenGui;
     })
-    Library:MakeRounded(KeybindOuter, UDim.new(0, 4))
 
-    local KeybindInner = Library:Create("Frame", {
+    -- Header (same style as watermark)
+    local KeybindHeader = Library:Create("Frame", {
         BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.OutlineColor;
-        BorderMode = Enum.BorderMode.Inset;
-        Size = UDim2.new(1, 0, 1, 0);
+        BackgroundTransparency = 0.5;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 20);
         ZIndex = 101;
         Parent = KeybindOuter;
     })
-    Library:MakeRounded(KeybindInner, UDim.new(0, 4))
+    Library:AddToRegistry(KeybindHeader, { BackgroundColor3 = "MainColor" }, true)
 
-    Library:AddToRegistry(KeybindInner, {
-        BackgroundColor3 = "MainColor";
-        BorderColor3 = "OutlineColor";
-    }, true)
-
-    local ColorFrame = Library:Create("Frame", {
+    local KeybindAccentBar = Library:Create("Frame", {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 0, 2);
         ZIndex = 102;
-        Parent = KeybindInner;
+        Parent = KeybindHeader;
     })
+    Library:AddToRegistry(KeybindAccentBar, { BackgroundColor3 = "AccentColor" }, true)
 
-    Library:AddToRegistry(ColorFrame, {
-        BackgroundColor3 = "AccentColor";
-    }, true)
-
-    local _KeybindLabel = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 0, 20);
-        Position = UDim2.fromOffset(5, 2),
-        TextXAlignment = Enum.TextXAlignment.Left,
-
+    Library:CreateLabel({
+        Size = UDim2.new(1, 0, 1, -2);
+        Position = UDim2.new(0, 0, 0, 2);
+        TextXAlignment = Enum.TextXAlignment.Center;
         Text = "Keybinds";
-        ZIndex = 104;
-        Parent = KeybindInner;
+        ZIndex = 103;
+        Parent = KeybindHeader;
     })
+
     Library:MakeDraggable(KeybindOuter)
 
+    -- List area — no background
     local KeybindContainer = Library:Create("Frame", {
         BackgroundTransparency = 1;
         Size = UDim2.new(1, 0, 1, -20);
         Position = UDim2.new(0, 0, 0, 20);
-        ZIndex = 1;
-        Parent = KeybindInner;
+        ZIndex = 101;
+        Parent = KeybindOuter;
     })
 
     Library:Create("UIListLayout", {
@@ -6215,78 +6152,56 @@ do
     })
 
     Library:Create("UIPadding", {
-        PaddingLeft = UDim.new(0, 5),
+        PaddingLeft = UDim.new(0, 8),
+        PaddingTop = UDim.new(0, 2),
         Parent = KeybindContainer,
     })
 
     Library.KeybindFrame = KeybindOuter
     Library.KeybindContainer = KeybindContainer
-    Library:MakeDraggable(KeybindOuter)
 end
 
 --// Watermark \\--
 do
     local WatermarkOuter = Library:Create("Frame", {
-        BorderColor3 = Color3.new(0, 0, 0);
-        Position = UDim2.new(0, 100, 0, -25);
+        AnchorPoint = Vector2.new(1, 0);
+        BackgroundColor3 = Library.MainColor;
+        BackgroundTransparency = 0.5;
+        BorderSizePixel = 0;
+        Position = UDim2.new(1, -5, 0, 5);
         Size = UDim2.new(0, 213, 0, 20);
         ZIndex = 200;
         Visible = false;
         Parent = ScreenGui;
     })
 
-    local WatermarkInner = Library:Create("Frame", {
-        BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.AccentColor;
-        BorderMode = Enum.BorderMode.Inset;
-        Size = UDim2.new(1, 0, 1, 0);
+    Library:AddToRegistry(WatermarkOuter, {
+        BackgroundColor3 = "MainColor";
+    })
+
+    -- Accent topbar strip
+    local WatermarkAccentBar = Library:Create("Frame", {
+        BackgroundColor3 = Library.AccentColor;
+        BorderSizePixel = 0;
+        Size = UDim2.new(1, 0, 0, 2);
         ZIndex = 201;
         Parent = WatermarkOuter;
     })
-
-    Library:AddToRegistry(WatermarkInner, {
-        BorderColor3 = "AccentColor";
-    })
-
-    local InnerFrame = Library:Create("Frame", {
-        BackgroundColor3 = Color3.new(1, 1, 1);
-        BorderSizePixel = 0;
-        Position = UDim2.new(0, 1, 0, 1);
-        Size = UDim2.new(1, -2, 1, -2);
-        ZIndex = 202;
-        Parent = WatermarkInner;
-    })
-
-    local Gradient = Library:Create("UIGradient", {
-        Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-            ColorSequenceKeypoint.new(1, Library.MainColor),
-        });
-        Rotation = -90;
-        Parent = InnerFrame;
-    })
-
-    Library:AddToRegistry(Gradient, {
-        Color = function()
-            return ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
-                ColorSequenceKeypoint.new(1, Library.MainColor),
-            })
-        end
-    })
+    Library:AddToRegistry(WatermarkAccentBar, {
+        BackgroundColor3 = "AccentColor";
+    }, true)
 
     local WatermarkLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 5, 0, 0);
-        Size = UDim2.new(1, -4, 1, 0);
+        Position = UDim2.new(0, 0, 0, 2);
+        Size = UDim2.new(1, 0, 1, -2);
         TextSize = 14;
-        TextXAlignment = Enum.TextXAlignment.Left;
-        ZIndex = 203;
-        Parent = InnerFrame;
+        TextXAlignment = Enum.TextXAlignment.Center;
+        ZIndex = 202;
+        Parent = WatermarkOuter;
     })
 
     Library.Watermark = WatermarkOuter
     Library.WatermarkText = WatermarkLabel
-    Library:MakeDraggable(Library.Watermark)
 
     function Library:SetWatermarkVisibility(Bool)
         Library.Watermark.Visible = Bool
@@ -6294,7 +6209,7 @@ do
 
     function Library:SetWatermark(Text)
         local X, Y = Library:GetTextBounds(Text, Library.Font, 14)
-        Library.Watermark.Size = UDim2.new(0, X + 15, 0, (Y * 1.5) + 3)
+        Library.Watermark.Size = UDim2.new(0, X + 20, 0, (Y * 1.5) + 3)
         Library:SetWatermarkVisibility(true)
 
         Library.WatermarkText.Text = Text
@@ -7304,6 +7219,19 @@ function Library:CreateWindow(...)
             BorderColor3 = "OutlineColor";
         })
 
+        -- Accent bar shown on active tab
+        local TabAccentBar = Library:Create("Frame", {
+            BackgroundColor3 = Library.AccentColor;
+            BorderSizePixel = 0;
+            Size = UDim2.new(1, 0, 0, 2);
+            ZIndex = 2;
+            Visible = false;
+            Parent = TabButton;
+        })
+        Library:AddToRegistry(TabAccentBar, {
+            BackgroundColor3 = "AccentColor";
+        })
+
         local TabButtonLabel = Library:CreateLabel({
             Position = UDim2.new(0, 0, 0, 0);
             Size = UDim2.new(1, 0, 1, -1);
@@ -7589,6 +7517,7 @@ end
             Blocker.BackgroundTransparency = 0
             TabButton.BackgroundColor3 = Library.MainColor
             Library.RegistryMap[TabButton].Properties.BackgroundColor3 = "MainColor"
+            TabAccentBar.Visible = true
             TabFrame.Visible = true
 
             Tab:Resize()
@@ -7599,6 +7528,7 @@ end
             Blocker.BackgroundTransparency = 1
             TabButton.BackgroundColor3 = Library.BackgroundColor
             Library.RegistryMap[TabButton].Properties.BackgroundColor3 = "BackgroundColor"
+            TabAccentBar.Visible = false
             TabFrame.Visible = false
         end
         Tab.Hide = Tab.HideTab
