@@ -465,6 +465,16 @@ function Library:Validate(Table: { [string]: any }, Template: { [string]: any })
     return Table
 end
 
+-- Subtle corner radius for a modern look
+Library.CornerRadius = UDim.new(0, 4)
+
+function Library:MakeRounded(Frame, Radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = Radius or Library.CornerRadius
+    c.Parent = Frame
+    return c
+end
+
 function Library:SetDPIScale(value: number) 
     assert(type(value) == "number", "Expected type number for DPI scale but got " .. typeof(value))
     
@@ -771,6 +781,7 @@ function Library:AddToolTip(InfoStr, DisabledInfoStr, HoverInstance)
 
         Visible = false;
     })
+    Library:MakeRounded(Tooltip, UDim.new(0, 3))
 
     local Label = Library:CreateLabel({
         Position = UDim2.fromOffset(3, 1);
@@ -1319,6 +1330,7 @@ do
             ZIndex = 6;
             Parent = ToggleLabel;
         })
+        Library:MakeRounded(PickOuter, UDim.new(0, 3))
 
         local PickInner = Library:Create("Frame", {
             BackgroundColor3 = Library.BackgroundColor;
@@ -1328,6 +1340,7 @@ do
             ZIndex = 7;
             Parent = PickOuter;
         })
+        Library:MakeRounded(PickInner, UDim.new(0, 3))
 
         Library:AddToRegistry(PickInner, {
             BackgroundColor3 = "BackgroundColor";
@@ -1363,6 +1376,7 @@ do
                 ZIndex = 110;
                 Parent = KeybindsToggleContainer;
             })
+            Library:MakeRounded(KeybindsToggleOuter, UDim.new(0, 2))
 
             Library:AddToRegistry(KeybindsToggleOuter, {
                 BorderColor3 = "Black";
@@ -1376,6 +1390,7 @@ do
                 ZIndex = 111;
                 Parent = KeybindsToggleOuter;
             })
+            Library:MakeRounded(KeybindsToggleInner, UDim.new(0, 2))
 
             Library:AddToRegistry(KeybindsToggleInner, {
                 BackgroundColor3 = "MainColor";
@@ -1471,6 +1486,7 @@ do
             ZIndex = 14;
             Parent = ScreenGui;
         })
+        Library:MakeRounded(ModeSelectOuter, UDim.new(0, 3))
 
         local function UpdateMenuOuterPos()
             ModeSelectOuter.Position = UDim2.fromOffset(ToggleLabel.AbsolutePosition.X + ToggleLabel.AbsoluteSize.X + 4, ToggleLabel.AbsolutePosition.Y)
@@ -1487,6 +1503,7 @@ do
             ZIndex = 15;
             Parent = ModeSelectOuter;
         })
+        Library:MakeRounded(ModeSelectInner, UDim.new(0, 3))
 
         Library:AddToRegistry(ModeSelectInner, {
             BackgroundColor3 = "BackgroundColor";
@@ -1983,6 +2000,7 @@ do
             ZIndex = 6;
             Parent = ToggleLabel;
         })
+        Library:MakeRounded(DisplayFrame, UDim.new(0, 3))
 
         -- Transparency image taken from https://github.com/matas3535/SplixPrivateDrawingLibrary/blob/main/Library.lua cus i'm lazy
         -- local CheckerFrame = 
@@ -2010,6 +2028,7 @@ do
             ZIndex = 15;
             Parent = ScreenGui,
         })
+        Library:MakeRounded(PickerFrameOuter, UDim.new(0, 4))
 
         DisplayFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
             PickerFrameOuter.Position = UDim2.fromOffset(DisplayFrame.AbsolutePosition.X, DisplayFrame.AbsolutePosition.Y + 18)
@@ -2023,6 +2042,7 @@ do
             ZIndex = 16;
             Parent = PickerFrameOuter;
         })
+        Library:MakeRounded(PickerFrameInner, UDim.new(0, 4))
 
         local Highlight = Library:Create("Frame", {
             BackgroundColor3 = Library.AccentColor;
@@ -2109,6 +2129,7 @@ do
             ZIndex = 18,
             Parent = PickerFrameInner;
         })
+        Library:MakeRounded(HueBoxOuter, UDim.new(0, 3))
 
         local HueBoxInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
@@ -2118,6 +2139,7 @@ do
             ZIndex = 18,
             Parent = HueBoxOuter;
         })
+        Library:MakeRounded(HueBoxInner, UDim.new(0, 3))
 
         Library:Create("UIGradient", {
             Color = ColorSequence.new({
@@ -2168,6 +2190,7 @@ do
                 ZIndex = 19;
                 Parent = PickerFrameInner;
             })
+            Library:MakeRounded(TransparencyBoxOuter, UDim.new(0, 3))
 
             TransparencyBoxInner = Library:Create("Frame", {
                 BackgroundColor3 = ColorPicker.Value;
@@ -2177,6 +2200,7 @@ do
                 ZIndex = 19;
                 Parent = TransparencyBoxOuter;
             })
+            Library:MakeRounded(TransparencyBoxInner, UDim.new(0, 3))
 
             Library:AddToRegistry(TransparencyBoxInner, { BorderColor3 = "OutlineColor" })
 
@@ -2220,6 +2244,7 @@ do
                 Visible = false,
                 Parent = ScreenGui
             })
+            Library:MakeRounded(ContextMenu.Container, UDim.new(0, 3))
 
             ContextMenu.Inner = Library:Create("Frame", {
                 BackgroundColor3 = Library.BackgroundColor;
@@ -2229,6 +2254,7 @@ do
                 ZIndex = 15;
                 Parent = ContextMenu.Container;
             })
+            Library:MakeRounded(ContextMenu.Inner, UDim.new(0, 3))
 
             Library:Create("UIListLayout", {
                 Name = "Layout",
@@ -2642,6 +2668,7 @@ do
             ZIndex = 6;
             Parent = ToggleLabel;
         })
+        Library:MakeRounded(DropdownOuter, UDim.new(0, 3))
 
         Library:AddToRegistry(DropdownOuter, {
             BorderColor3 = "Black";
@@ -2655,6 +2682,7 @@ do
             ZIndex = 6;
             Parent = DropdownOuter;
         })
+        Library:MakeRounded(DropdownInner, UDim.new(0, 3))
 
         Library:AddToRegistry(DropdownInner, {
             BackgroundColor3 = "MainColor";
@@ -2747,6 +2775,7 @@ do
             Visible = false;
             Parent = ScreenGui;
         })
+        Library:MakeRounded(ListOuter, UDim.new(0, 3))
 
         local OpenedXSizeForList = 0
 
@@ -2774,6 +2803,7 @@ do
             ZIndex = 21;
             Parent = ListOuter;
         })
+        Library:MakeRounded(ListInner, UDim.new(0, 3))
 
         Library:AddToRegistry(ListInner, {
             BackgroundColor3 = "MainColor";
@@ -3776,6 +3806,7 @@ do
             ZIndex = 5;
             Parent = Container;
         })
+        Library:MakeRounded(TextBoxOuter, UDim.new(0, 3))
 
         local TextBoxInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
@@ -3785,6 +3816,7 @@ do
             ZIndex = 6;
             Parent = TextBoxOuter;
         })
+        Library:MakeRounded(TextBoxInner, UDim.new(0, 3))
 
         Library:AddToRegistry(TextBoxInner, {
             BackgroundColor3 = "MainColor";
@@ -4019,6 +4051,7 @@ do
             ZIndex = 5;
             Parent = ToggleContainer;
         })
+        Library:MakeRounded(ToggleOuter, UDim.new(0, 2))
 
         Library:AddToRegistry(ToggleOuter, {
             BorderColor3 = "Black";
@@ -4032,6 +4065,7 @@ do
             ZIndex = 6;
             Parent = ToggleOuter;
         })
+        Library:MakeRounded(ToggleInner, UDim.new(0, 2))
 
         Library:AddToRegistry(ToggleInner, {
             BackgroundColor3 = "MainColor";
@@ -4272,6 +4306,7 @@ do
             ZIndex = 5;
             Parent = Container;
         })
+        Library:MakeRounded(SliderOuter, UDim.new(0, 3))
 
         SliderOuter:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
             Slider.MaxSize = SliderOuter.AbsoluteSize.X - 2
@@ -4289,6 +4324,7 @@ do
             ZIndex = 6;
             Parent = SliderOuter;
         })
+        Library:MakeRounded(SliderInner, UDim.new(0, 3))
 
         Library:AddToRegistry(SliderInner, {
             BackgroundColor3 = "MainColor";
@@ -4302,6 +4338,7 @@ do
             ZIndex = 7;
             Parent = SliderInner;
         })
+        Library:MakeRounded(Fill, UDim.new(0, 3))
 
         Library:AddToRegistry(Fill, {
             BackgroundColor3 = "AccentColor";
@@ -4659,6 +4696,7 @@ do
             ZIndex = 5;
             Parent = Container;
         })
+        Library:MakeRounded(DropdownOuter, UDim.new(0, 3))
 
         Library:AddToRegistry(DropdownOuter, {
             BorderColor3 = "Black";
@@ -4672,6 +4710,7 @@ do
             ZIndex = 6;
             Parent = DropdownOuter;
         })
+        Library:MakeRounded(DropdownInner, UDim.new(0, 3))
 
         Library:AddToRegistry(DropdownInner, {
             BackgroundColor3 = "MainColor";
@@ -4764,6 +4803,7 @@ do
             Visible = false;
             Parent = ScreenGui;
         })
+        Library:MakeRounded(ListOuter, UDim.new(0, 3))
 
         local function RecalculateListPosition()
             ListOuter.Position = UDim2.fromOffset(DropdownOuter.AbsolutePosition.X, DropdownOuter.AbsolutePosition.Y + DropdownOuter.Size.Y.Offset + 1)
@@ -4788,6 +4828,7 @@ do
             ZIndex = 21;
             Parent = ListOuter;
         })
+        Library:MakeRounded(ListInner, UDim.new(0, 3))
 
         Library:AddToRegistry(ListInner, {
             BackgroundColor3 = "MainColor";
@@ -6004,6 +6045,7 @@ do
             ZIndex = 2;
             Parent = ParentGroupbox.Side == 1 and Tab.LeftSideFrame or Tab.RightSideFrame;
         })
+        Library:MakeRounded(BoxOuter)
 
         Library:AddToRegistry(BoxOuter, {
             BackgroundColor3 = "BackgroundColor";
@@ -6019,6 +6061,7 @@ do
             ZIndex = 4;
             Parent = BoxOuter;
         })
+        Library:MakeRounded(BoxInner)
 
         Library:AddToRegistry(BoxInner, {
             BackgroundColor3 = "BackgroundColor";
@@ -6117,6 +6160,7 @@ do
         ZIndex = 100;
         Parent = ScreenGui;
     })
+    Library:MakeRounded(KeybindOuter, UDim.new(0, 4))
 
     local KeybindInner = Library:Create("Frame", {
         BackgroundColor3 = Library.MainColor;
@@ -6126,6 +6170,7 @@ do
         ZIndex = 101;
         Parent = KeybindOuter;
     })
+    Library:MakeRounded(KeybindInner, UDim.new(0, 4))
 
     Library:AddToRegistry(KeybindInner, {
         BackgroundColor3 = "MainColor";
@@ -6339,6 +6384,7 @@ do
             Name = "Notif";
             Parent = Side == "left" and Library.LeftNotificationArea or Library.RightNotificationArea;
         })
+        Library:MakeRounded(NotifyOuter, UDim.new(0, 4))
 
         local NotifyInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
@@ -6348,6 +6394,7 @@ do
             ZIndex = 11001;
             Parent = NotifyOuter;
         })
+        Library:MakeRounded(NotifyInner, UDim.new(0, 4))
 
         Library:AddToRegistry(NotifyInner, {
             BackgroundColor3 = "MainColor";
@@ -6574,6 +6621,7 @@ function Library:CreateWindow(...)
         Parent = ScreenGui;
         Name = "Window";
     })
+    Library:MakeRounded(Outer, UDim.new(0, 6))
     LibraryMainOuterFrame = Outer
     Library:MakeDraggable(Outer, 25, true)
     if WindowInfo.Resizable then Library:MakeResizable(Outer, Library.MinSize) end
@@ -6587,6 +6635,7 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = Outer;
     })
+    Library:MakeRounded(Inner, UDim.new(0, 6))
 
     Library:AddToRegistry(Inner, {
         BackgroundColor3 = "MainColor";
@@ -6610,6 +6659,7 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = Inner;
     })
+    Library:MakeRounded(MainSectionOuter)
 
     Library:AddToRegistry(MainSectionOuter, {
         BackgroundColor3 = "BackgroundColor";
@@ -6625,6 +6675,7 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = MainSectionOuter;
     })
+    Library:MakeRounded(MainSectionInner)
 
     Library:AddToRegistry(MainSectionInner, {
         BackgroundColor3 = "BackgroundColor";
@@ -6678,6 +6729,7 @@ function Library:CreateWindow(...)
         ZIndex = 2;
         Parent = MainSectionInner;
     })
+    Library:MakeRounded(TabContainer)
     
     local InnerVideoBackground = Library:Create("VideoFrame", {
         BackgroundColor3 = Library.MainColor;
@@ -6777,6 +6829,7 @@ function Library:CreateWindow(...)
             Text = "",
             AutoButtonColor = false,
         })
+        Library:MakeRounded(DialogFrame, UDim.new(0, 6))
 
         local DialogInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor,
@@ -6787,6 +6840,7 @@ function Library:CreateWindow(...)
             ZIndex = 9002,
             Parent = DialogFrame,
         })
+        Library:MakeRounded(DialogInner, UDim.new(0, 6))
 
         Library:AddToRegistry(DialogFrame, {
             BackgroundColor3 = "BackgroundColor",
@@ -7092,6 +7146,7 @@ function Library:CreateWindow(...)
                 ZIndex = 9004,
                 Parent = ButtonContainer,
             })
+            Library:MakeRounded(TextBtn, UDim.new(0, 3))
 
             if Variant == "Primary" then
                 Library:AddToRegistry(TextBtn, { BackgroundColor3 = "MainColor", BorderColor3 = "AccentColor" })
@@ -7242,6 +7297,7 @@ function Library:CreateWindow(...)
             ZIndex = 1;
             Parent = TabArea;
         })
+        Library:MakeRounded(TabButton, UDim.new(0, 3))
 
         Library:AddToRegistry(TabButton, {
             BackgroundColor3 = "BackgroundColor";
@@ -7294,6 +7350,7 @@ do
                 Parent = TabFrame;
                 Visible = false;
             })
+            Library:MakeRounded(TopBar)
 
             TopBarInner = Library:Create("Frame", {
                 BackgroundColor3 = Color3.fromRGB(117, 22, 17);
@@ -7304,6 +7361,7 @@ do
                 ZIndex = 4;
                 Parent = TopBar;
             })
+            Library:MakeRounded(TopBarInner)
 
             TopBarHighlight = Library:Create("Frame", {
                 BackgroundColor3 = Color3.fromRGB(255, 75, 75);
@@ -7581,6 +7639,7 @@ end
                 ZIndex = 2;
                 Parent = Info.Side == 1 and LeftSide or RightSide;
             })
+            Library:MakeRounded(BoxOuter)
 
             Library:AddToRegistry(BoxOuter, {
                 BackgroundColor3 = "BackgroundColor";
@@ -7596,6 +7655,7 @@ end
                 ZIndex = 4;
                 Parent = BoxOuter;
             })
+            Library:MakeRounded(BoxInner)
 
             Library:AddToRegistry(BoxInner, {
                 BackgroundColor3 = "BackgroundColor";
@@ -7682,6 +7742,7 @@ end
                 ZIndex = 2;
                 Parent = Info.Side == 1 and LeftSide or RightSide;
             })
+            Library:MakeRounded(BoxOuter)
 
             Library:AddToRegistry(BoxOuter, {
                 BackgroundColor3 = "BackgroundColor";
@@ -7697,6 +7758,7 @@ end
                 ZIndex = 4;
                 Parent = BoxOuter;
             })
+            Library:MakeRounded(BoxInner)
 
             Library:AddToRegistry(BoxInner, {
                 BackgroundColor3 = "BackgroundColor";
@@ -8041,6 +8103,7 @@ end
             Visible = true;
             Parent = ScreenGui;
         })
+        Library:MakeRounded(ToggleUIOuter, UDim.new(0, 4))
     
         local ToggleUIInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
@@ -8111,6 +8174,7 @@ end
             Visible = true;
             Parent = ScreenGui;
         })
+        Library:MakeRounded(LockUIOuter, UDim.new(0, 4))
     
         local LockUIInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
