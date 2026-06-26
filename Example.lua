@@ -716,10 +716,23 @@ end)
 -- UI Settings
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
 
-MenuGroup:AddToggle("KeybindMenuOpen", { Default = Library.KeybindFrame.Visible, Text = "Open Keybind Menu", Callback = function(value) Library.KeybindFrame.Visible = value end})
-MenuGroup:AddToggle("ShowCustomCursor", {Text = "Custom Cursor", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
-MenuGroup:AddDivider()
 MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
+MenuGroup:AddToggle("KeybindList", { Default = Library.KeybindFrame.Visible, Text = "Keybind List", Callback = function(value) Library.KeybindFrame.Visible = value end})
+local keybindDep = MenuGroup:AddDependencyBox("Keybind List Transparency")
+keybindDep:AddSlider("KeybindTransparency", {
+	Text = "Keybind List Transparency",
+	Default = 0,
+	Min = 0,
+	Max = 0.9,
+	Rounding = 1,
+	Callback = function(Value)
+		Library:SetKeybindTransparency(Value)
+	end
+})
+keybindDep:SetupDependencies({
+	{ Toggles.KeybindList, true }
+})
+--MenuGroup:AddToggle("ShowCustomCursor", {Text = "Custom Cursor", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
 MenuGroup:AddButton("Unload", function() Library:Unload() end)
 
 Library.ToggleKeybind = Options.MenuKeybind -- Allows you to have a custom keybind for the menu

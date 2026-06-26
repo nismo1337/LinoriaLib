@@ -69,7 +69,6 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 ScreenGui.DisplayOrder = 999
 ScreenGui.ResetOnSpawn = false
-ScreenGui.ScreenInsets = Enum.ScreenInsets.None
 ParentUI(ScreenGui)
 
 local ModalElement = Instance.new("TextButton")
@@ -264,7 +263,9 @@ local Library = {
 
     ScreenGui = ScreenGui;
     KeybindFrame = nil;
+    KeybindInner = nil;
     KeybindContainer = nil;
+    KeybindTransparency = 0;
     Window = { Holder = nil; Tabs = {}; };
 
     -- variables --
@@ -466,16 +467,6 @@ function Library:Validate(Table: { [string]: any }, Template: { [string]: any })
     return Table
 end
 
--- Subtle corner radius for a modern look
-Library.CornerRadius = UDim.new(0, 4)
-
-function Library:MakeRounded(Frame, Radius)
-    local c = Instance.new("UICorner")
-    c.CornerRadius = Radius or Library.CornerRadius
-    c.Parent = Frame
-    return c
-end
-
 function Library:SetDPIScale(value: number) 
     assert(type(value) == "number", "Expected type number for DPI scale but got " .. typeof(value))
     
@@ -508,6 +499,14 @@ end
 function Library:AttemptSave()
     if (not Library.SaveManager) then return end
     Library.SaveManager:Save()
+end
+
+function Library:SetFont(Font)
+    if typeof(Font) == "string" then
+        Font = Enum.Font[Font] or Enum.Font.Code
+    end
+    Library.Font = Font
+    Library:UpdateColorsUsingRegistry()
 end
 
 function Library:Create(Class, Properties)
@@ -560,6 +559,7 @@ function Library:CreateLabel(Properties, IsHud)
 
     Library:AddToRegistry(_Instance, {
         TextColor3 = "FontColor";
+        Font = "Font";
     }, IsHud)
 
     return Library:Create(_Instance, Properties)
@@ -782,7 +782,6 @@ function Library:AddToolTip(InfoStr, DisabledInfoStr, HoverInstance)
 
         Visible = false;
     })
-    Library:MakeRounded(Tooltip, UDim.new(0, 3))
 
     local Label = Library:CreateLabel({
         Position = UDim2.fromOffset(3, 1);
@@ -1331,7 +1330,6 @@ do
             ZIndex = 6;
             Parent = ToggleLabel;
         })
-        Library:MakeRounded(PickOuter, UDim.new(0, 3))
 
         local PickInner = Library:Create("Frame", {
             BackgroundColor3 = Library.BackgroundColor;
@@ -1341,7 +1339,6 @@ do
             ZIndex = 7;
             Parent = PickOuter;
         })
-        Library:MakeRounded(PickInner, UDim.new(0, 3))
 
         Library:AddToRegistry(PickInner, {
             BackgroundColor3 = "BackgroundColor";
@@ -1362,30 +1359,82 @@ do
         do
             local KeybindsToggleContainer = Library:Create("Frame", {
                 BackgroundTransparency = 1;
-                Size = UDim2.new(1, 0, 0, 16);
+                Size = UDim2.new(1, 0, 0, 18);
                 Visible = false;
                 ZIndex = 110;
                 Parent = Library.KeybindContainer;
             })
 
-            local KeybindsToggleLabel = Library:CreateLabel({
-                BackgroundTransparency = 1;
-                Size = UDim2.new(1, -8, 1, 0);
-                Position = UDim2.new(0, 0, 0, 0);
-                TextSize = 13;
-                Text = "";
-                TextXAlignment = Enum.TextXAlignment.Left;
-                ZIndex = 111;
+            local KeybindsToggleOuter = Library:Create("Frame", {
+                BackgroundColor3 = Color3.new(0, 0, 0);
+                BorderColor3 = Color3.new(0, 0, 0);
+                Size = UDim2.new(0, 13, 0, 13);
+                Position = UDim2.new(0, 0, 0, 6);
+                Visible = true;
+                ZIndex = 110;
                 Parent = KeybindsToggleContainer;
             })
 
-            Library:AddToRegistry(KeybindsToggleLabel, {
-                TextColor3 = "FontColor";
+            Library:AddToRegistry(KeybindsToggleOuter, {
+                BorderColor3 = "Black";
             })
 
+            local KeybindsToggleInner = Library:Create("Frame", {
+                BackgroundColor3 = Library.MainColor;
+                BorderColor3 = Library.OutlineColor;
+                BorderMode = Enum.BorderMode.Inset;
+                Size = UDim2.new(1, 0, 1, 0);
+                ZIndex = 111;
+                Parent = KeybindsToggleOuter;
+            })
+
+            Library:AddToRegistry(KeybindsToggleInner, {
+                BackgroundColor3 = "MainColor";
+                BorderColor3 = "OutlineColor";
+            })
+
+            local KeybindsToggleLabel = Library:CreateLabel({
+                BackgroundTransparency = 1;
+                Size = UDim2.new(0, 216, 1, 0);
+                Position = UDim2.new(1, 6, 0, -1);
+                TextSize = 14;
+                Text = "";
+                TextXAlignment = Enum.TextXAlignment.Left;
+                ZIndex = 111;
+                Parent = KeybindsToggleInner;
+            })
+
+            Library:Create("UIListLayout", {
+                Padding = UDim.new(0, 4);
+                FillDirection = Enum.FillDirection.Horizontal;
+                HorizontalAlignment = Enum.HorizontalAlignment.Right;
+                VerticalAlignment = Enum.VerticalAlignment.Center;
+                SortOrder = Enum.SortOrder.LayoutOrder;
+                Parent = KeybindsToggleLabel;
+            })
+
+            local KeybindsToggleRegion = Library:Create("Frame", {
+                BackgroundTransparency = 1;
+                Size = UDim2.new(0, 170, 1, 0);
+                ZIndex = 113;
+                Parent = KeybindsToggleOuter;
+            })
+
+            Library:OnHighlight(KeybindsToggleRegion, KeybindsToggleOuter,
+                { BorderColor3 = "AccentColor" },
+                { BorderColor3 = "Black" },
+                function()
+                    return true
+                end
+            )
+
             function KeybindsToggle:Display(State)
-                -- tint label with accent when toggled on
+                KeybindsToggleInner.BackgroundColor3 = State and Library.AccentColor or Library.MainColor
+                KeybindsToggleInner.BorderColor3 = State and Library.AccentColorDark or Library.OutlineColor
                 KeybindsToggleLabel.TextColor3 = State and Library.AccentColor or Library.FontColor
+
+                Library.RegistryMap[KeybindsToggleInner].Properties.BackgroundColor3 = State and "AccentColor" or "MainColor"
+                Library.RegistryMap[KeybindsToggleInner].Properties.BorderColor3 = State and "AccentColorDark" or "OutlineColor"
                 Library.RegistryMap[KeybindsToggleLabel].Properties.TextColor3 = State and "AccentColor" or "FontColor"
             end
 
@@ -1399,13 +1448,23 @@ do
 
             function KeybindsToggle:SetNormal(bool)
                 KeybindsToggle.Normal = bool
+
+                KeybindsToggleOuter.BackgroundTransparency = if KeybindsToggle.Normal then 1 else 0
+
+                KeybindsToggleInner.BackgroundTransparency = if KeybindsToggle.Normal then 1 else 0
+                KeybindsToggleInner.BorderSizePixel = if KeybindsToggle.Normal then 0 else 1
+
+                KeybindsToggleLabel.Position = if KeybindsToggle.Normal then UDim2.new(1, -13, 0, -1) else UDim2.new(1, 6, 0, -1)
             end
 
-            KeyPicker.DoClick = function(...) end
-            Library:GiveSignal(KeybindsToggleContainer.InputBegan:Connect(function(Input)
-                if Library.Unloaded then return end
-                if KeybindsToggle.Normal then return end
+            KeyPicker.DoClick = function(...) end --// make luau lsp shut up
+            Library:GiveSignal(KeybindsToggleRegion.InputBegan:Connect(function(Input)
+                if Library.Unloaded then
+                    return
+                end
 
+                if KeybindsToggle.Normal then return end
+                                        
                 if (Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame()) or Input.UserInputType == Enum.UserInputType.Touch then
                     KeyPicker.Toggled = not KeyPicker.Toggled
                     KeyPicker:DoClick()
@@ -1423,7 +1482,6 @@ do
             ZIndex = 14;
             Parent = ScreenGui;
         })
-        Library:MakeRounded(ModeSelectOuter, UDim.new(0, 3))
 
         local function UpdateMenuOuterPos()
             ModeSelectOuter.Position = UDim2.fromOffset(ToggleLabel.AbsolutePosition.X + ToggleLabel.AbsoluteSize.X + 4, ToggleLabel.AbsolutePosition.Y)
@@ -1440,7 +1498,6 @@ do
             ZIndex = 15;
             Parent = ModeSelectOuter;
         })
-        Library:MakeRounded(ModeSelectInner, UDim.new(0, 3))
 
         Library:AddToRegistry(ModeSelectInner, {
             BackgroundColor3 = "BackgroundColor";
@@ -1559,7 +1616,6 @@ do
             end
 
             local State = KeyPicker:GetState()
-            local HasBinding = KeyPicker.Value ~= nil and KeyPicker.Value ~= "None" and KeyPicker.Value ~= ""
             local ShowToggle = Library.ShowToggleFrameInKeybinds and KeyPicker.Mode == "Toggle"
 
             if KeyPicker.SyncToggleState and ParentObj.Value ~= State then
@@ -1569,14 +1625,9 @@ do
             if KeybindsToggle.Loaded then
                 KeybindsToggle:SetNormal(not ShowToggle)
 
-                if HasBinding then
-                    local modeLabel = KeyPicker.Mode:lower()
-                    KeybindsToggle:SetVisibility(true)
-                    KeybindsToggle:SetText(string.format("%s [%s]", Info.Text, modeLabel))
-                    KeybindsToggle:Display(State)
-                else
-                    KeybindsToggle:SetVisibility(false)
-                end
+                KeybindsToggle:SetVisibility(true)
+                KeybindsToggle:SetText(string.format("[%s] %s (%s)", tostring(KeyPicker.DisplayValue), Info.Text, KeyPicker.Mode))
+                KeybindsToggle:Display(State)
             end
 
             local YSize = 0
@@ -1584,10 +1635,10 @@ do
 
             for _, Frame in next, Library.KeybindContainer:GetChildren() do
                 if Frame:IsA("Frame") and Frame.Visible then
-                    YSize = YSize + 16
+                    YSize = YSize + 18
                     local Label = Frame:FindFirstChild("TextLabel", true)
                     if not Label then continue end
-
+                    
                     local LabelSize = Label.TextBounds.X + 20
                     if (LabelSize > XSize) then
                         XSize = LabelSize
@@ -1595,8 +1646,8 @@ do
                 end
             end
 
-            Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 16, 160), 0, YSize + 20 + (YSize > 0 and 4 or 0))
-            Library.KeybindFrame.Visible = YSize > 0
+            Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 10, 220), 0, (YSize + 23 + 6) * DPIScale)
+            UpdateMenuOuterPos()
         end
 
         function KeyPicker:GetState()
@@ -1939,17 +1990,16 @@ do
             BackgroundColor3 = ColorPicker.Value;
             BorderColor3 = Library:GetDarkerColor(ColorPicker.Value);
             BorderMode = Enum.BorderMode.Inset;
-            Size = UDim2.new(0, 21, 0, 11);
+            Size = UDim2.new(0, 28, 0, 15);
             ZIndex = 6;
             Parent = ToggleLabel;
         })
-        Library:MakeRounded(DisplayFrame, UDim.new(0, 3))
 
         -- Transparency image taken from https://github.com/matas3535/SplixPrivateDrawingLibrary/blob/main/Library.lua cus i'm lazy
         -- local CheckerFrame = 
         Library:Create("ImageLabel", {
             BorderSizePixel = 0;
-            Size = UDim2.new(0, 20, 0, 9);
+            Size = UDim2.new(0, 27, 0, 13);
             ZIndex = 5;
             Image = CustomImageManager.GetAsset("Checker");
             Visible = not not Info.Transparency;
@@ -1966,12 +2016,11 @@ do
             BackgroundColor3 = Color3.new(1, 1, 1);
             BorderColor3 = Color3.new(0, 0, 0);
             Position = UDim2.fromOffset(DisplayFrame.AbsolutePosition.X, DisplayFrame.AbsolutePosition.Y + 18),
-            Size = UDim2.fromOffset(230, Info.Transparency and 220 or 203);
+            Size = UDim2.fromOffset(230, Info.Transparency and 271 or 253);
             Visible = false;
             ZIndex = 15;
             Parent = ScreenGui,
         })
-        Library:MakeRounded(PickerFrameOuter, UDim.new(0, 4))
 
         DisplayFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
             PickerFrameOuter.Position = UDim2.fromOffset(DisplayFrame.AbsolutePosition.X, DisplayFrame.AbsolutePosition.Y + 18)
@@ -1985,7 +2034,6 @@ do
             ZIndex = 16;
             Parent = PickerFrameOuter;
         })
-        Library:MakeRounded(PickerFrameInner, UDim.new(0, 4))
 
         local Highlight = Library:Create("Frame", {
             BackgroundColor3 = Library.AccentColor;
@@ -1998,7 +2046,7 @@ do
         local SatVibMapOuter = Library:Create("Frame", {
             BorderColor3 = Color3.new(0, 0, 0);
             Position = UDim2.new(0, 4, 0, 25);
-            Size = UDim2.new(0, 200, 0, 150);
+            Size = UDim2.new(0, 200, 0, 200);
             ZIndex = 17;
             Parent = PickerFrameInner;
         })
@@ -2043,7 +2091,7 @@ do
         local HueSelectorOuter = Library:Create("Frame", {
             BorderColor3 = Color3.new(0, 0, 0);
             Position = UDim2.new(0, 208, 0, 25);
-            Size = UDim2.new(0, 15, 0, 150);
+            Size = UDim2.new(0, 15, 0, 200);
             ZIndex = 17;
             Parent = PickerFrameInner;
         })
@@ -2067,12 +2115,11 @@ do
 
         local HueBoxOuter = Library:Create("Frame", {
             BorderColor3 = Color3.new(0, 0, 0);
-            Position = UDim2.fromOffset(4, 177),
+            Position = UDim2.fromOffset(4, 228),
             Size = UDim2.new(0.5, -6, 0, 20),
             ZIndex = 18,
             Parent = PickerFrameInner;
         })
-        Library:MakeRounded(HueBoxOuter, UDim.new(0, 3))
 
         local HueBoxInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
@@ -2082,7 +2129,6 @@ do
             ZIndex = 18,
             Parent = HueBoxOuter;
         })
-        Library:MakeRounded(HueBoxInner, UDim.new(0, 3))
 
         Library:Create("UIGradient", {
             Color = ColorSequence.new({
@@ -2112,7 +2158,7 @@ do
         Library:ApplyTextStroke(HueBox)
 
         local RgbBoxBase = Library:Create(HueBoxOuter:Clone(), {
-            Position = UDim2.new(0.5, 2, 0, 177),
+            Position = UDim2.new(0.5, 2, 0, 228),
             Size = UDim2.new(0.5, -6, 0, 20),
             Parent = PickerFrameInner
         })
@@ -2128,12 +2174,11 @@ do
         if Info.Transparency then 
             TransparencyBoxOuter = Library:Create("Frame", {
                 BorderColor3 = Color3.new(0, 0, 0);
-                Position = UDim2.fromOffset(4, 199);
+                Position = UDim2.fromOffset(4, 251);
                 Size = UDim2.new(1, -8, 0, 15);
                 ZIndex = 19;
                 Parent = PickerFrameInner;
             })
-            Library:MakeRounded(TransparencyBoxOuter, UDim.new(0, 3))
 
             TransparencyBoxInner = Library:Create("Frame", {
                 BackgroundColor3 = ColorPicker.Value;
@@ -2143,7 +2188,6 @@ do
                 ZIndex = 19;
                 Parent = TransparencyBoxOuter;
             })
-            Library:MakeRounded(TransparencyBoxInner, UDim.new(0, 3))
 
             Library:AddToRegistry(TransparencyBoxInner, { BorderColor3 = "OutlineColor" })
 
@@ -2187,7 +2231,6 @@ do
                 Visible = false,
                 Parent = ScreenGui
             })
-            Library:MakeRounded(ContextMenu.Container, UDim.new(0, 3))
 
             ContextMenu.Inner = Library:Create("Frame", {
                 BackgroundColor3 = Library.BackgroundColor;
@@ -2197,7 +2240,6 @@ do
                 ZIndex = 15;
                 Parent = ContextMenu.Container;
             })
-            Library:MakeRounded(ContextMenu.Inner, UDim.new(0, 3))
 
             Library:Create("UIListLayout", {
                 Name = "Layout",
@@ -2611,7 +2653,6 @@ do
             ZIndex = 6;
             Parent = ToggleLabel;
         })
-        Library:MakeRounded(DropdownOuter, UDim.new(0, 3))
 
         Library:AddToRegistry(DropdownOuter, {
             BorderColor3 = "Black";
@@ -2625,7 +2666,6 @@ do
             ZIndex = 6;
             Parent = DropdownOuter;
         })
-        Library:MakeRounded(DropdownInner, UDim.new(0, 3))
 
         Library:AddToRegistry(DropdownInner, {
             BackgroundColor3 = "MainColor";
@@ -2718,7 +2758,6 @@ do
             Visible = false;
             Parent = ScreenGui;
         })
-        Library:MakeRounded(ListOuter, UDim.new(0, 3))
 
         local OpenedXSizeForList = 0
 
@@ -2746,7 +2785,6 @@ do
             ZIndex = 21;
             Parent = ListOuter;
         })
-        Library:MakeRounded(ListInner, UDim.new(0, 3))
 
         Library:AddToRegistry(ListInner, {
             BackgroundColor3 = "MainColor";
@@ -3749,7 +3787,6 @@ do
             ZIndex = 5;
             Parent = Container;
         })
-        Library:MakeRounded(TextBoxOuter, UDim.new(0, 3))
 
         local TextBoxInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
@@ -3759,7 +3796,6 @@ do
             ZIndex = 6;
             Parent = TextBoxOuter;
         })
-        Library:MakeRounded(TextBoxInner, UDim.new(0, 3))
 
         Library:AddToRegistry(TextBoxInner, {
             BackgroundColor3 = "MainColor";
@@ -3994,7 +4030,6 @@ do
             ZIndex = 5;
             Parent = ToggleContainer;
         })
-        Library:MakeRounded(ToggleOuter, UDim.new(0, 2))
 
         Library:AddToRegistry(ToggleOuter, {
             BorderColor3 = "Black";
@@ -4008,7 +4043,6 @@ do
             ZIndex = 6;
             Parent = ToggleOuter;
         })
-        Library:MakeRounded(ToggleInner, UDim.new(0, 2))
 
         Library:AddToRegistry(ToggleInner, {
             BackgroundColor3 = "MainColor";
@@ -4206,7 +4240,6 @@ do
             Min = Info.Min;
             Max = Info.Max;
             Rounding = Info.Rounding;
-	        Step = tonumber(Info.Step) or nil;
             MaxSize = 232;
             Type = "Slider";
             Visible = if typeof(Info.Visible) == "boolean" then Info.Visible else true;
@@ -4249,7 +4282,6 @@ do
             ZIndex = 5;
             Parent = Container;
         })
-        Library:MakeRounded(SliderOuter, UDim.new(0, 3))
 
         SliderOuter:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
             Slider.MaxSize = SliderOuter.AbsoluteSize.X - 2
@@ -4267,7 +4299,6 @@ do
             ZIndex = 6;
             Parent = SliderOuter;
         })
-        Library:MakeRounded(SliderInner, UDim.new(0, 3))
 
         Library:AddToRegistry(SliderInner, {
             BackgroundColor3 = "MainColor";
@@ -4281,7 +4312,6 @@ do
             ZIndex = 7;
             Parent = SliderInner;
         })
-        Library:MakeRounded(Fill, UDim.new(0, 3))
 
         Library:AddToRegistry(Fill, {
             BackgroundColor3 = "AccentColor";
@@ -4381,10 +4411,6 @@ do
         end
 
         local function Round(Value)
-			if Slider.Step and Slider.Step > 0 then
-				Value = math.round(Value / Slider.Step) * Slider.Step
-			end
-			
             if Slider.Rounding == 0 then
                 return math.floor(Value)
             end
@@ -4639,7 +4665,6 @@ do
             ZIndex = 5;
             Parent = Container;
         })
-        Library:MakeRounded(DropdownOuter, UDim.new(0, 3))
 
         Library:AddToRegistry(DropdownOuter, {
             BorderColor3 = "Black";
@@ -4653,7 +4678,6 @@ do
             ZIndex = 6;
             Parent = DropdownOuter;
         })
-        Library:MakeRounded(DropdownInner, UDim.new(0, 3))
 
         Library:AddToRegistry(DropdownInner, {
             BackgroundColor3 = "MainColor";
@@ -4746,7 +4770,6 @@ do
             Visible = false;
             Parent = ScreenGui;
         })
-        Library:MakeRounded(ListOuter, UDim.new(0, 3))
 
         local function RecalculateListPosition()
             ListOuter.Position = UDim2.fromOffset(DropdownOuter.AbsolutePosition.X, DropdownOuter.AbsolutePosition.Y + DropdownOuter.Size.Y.Offset + 1)
@@ -4771,7 +4794,6 @@ do
             ZIndex = 21;
             Parent = ListOuter;
         })
-        Library:MakeRounded(ListInner, UDim.new(0, 3))
 
         Library:AddToRegistry(ListInner, {
             BackgroundColor3 = "MainColor";
@@ -5988,7 +6010,6 @@ do
             ZIndex = 2;
             Parent = ParentGroupbox.Side == 1 and Tab.LeftSideFrame or Tab.RightSideFrame;
         })
-        Library:MakeRounded(BoxOuter)
 
         Library:AddToRegistry(BoxOuter, {
             BackgroundColor3 = "BackgroundColor";
@@ -6004,7 +6025,6 @@ do
             ZIndex = 4;
             Parent = BoxOuter;
         })
-        Library:MakeRounded(BoxInner)
 
         Library:AddToRegistry(BoxInner, {
             BackgroundColor3 = "BackgroundColor";
@@ -6096,8 +6116,7 @@ end
 do
     local KeybindOuter = Library:Create("Frame", {
         AnchorPoint = Vector2.new(0, 0.5);
-        BackgroundTransparency = 1;
-        BorderSizePixel = 0;
+        BorderColor3 = Color3.new(0, 0, 0);
         Position = UDim2.new(0, 10, 0.5, 0);
         Size = UDim2.new(0, 210, 0, 20);
         Visible = false;
@@ -6105,44 +6124,49 @@ do
         Parent = ScreenGui;
     })
 
-    -- Header (same style as watermark)
-    local KeybindHeader = Library:Create("Frame", {
+    local KeybindInner = Library:Create("Frame", {
         BackgroundColor3 = Library.MainColor;
-        BackgroundTransparency = 0.5;
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 20);
+        BorderColor3 = Library.OutlineColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 101;
         Parent = KeybindOuter;
     })
-    Library:AddToRegistry(KeybindHeader, { BackgroundColor3 = "MainColor" }, true)
 
-    local KeybindAccentBar = Library:Create("Frame", {
+    Library:AddToRegistry(KeybindInner, {
+        BackgroundColor3 = "MainColor";
+        BorderColor3 = "OutlineColor";
+    }, true)
+
+    local ColorFrame = Library:Create("Frame", {
         BackgroundColor3 = Library.AccentColor;
         BorderSizePixel = 0;
         Size = UDim2.new(1, 0, 0, 2);
         ZIndex = 102;
-        Parent = KeybindHeader;
+        Parent = KeybindInner;
     })
-    Library:AddToRegistry(KeybindAccentBar, { BackgroundColor3 = "AccentColor" }, true)
 
-    Library:CreateLabel({
-        Size = UDim2.new(1, 0, 1, -2);
-        Position = UDim2.new(0, 0, 0, 2);
-        TextXAlignment = Enum.TextXAlignment.Center;
+    Library:AddToRegistry(ColorFrame, {
+        BackgroundColor3 = "AccentColor";
+    }, true)
+
+    local _KeybindLabel = Library:CreateLabel({
+        Size = UDim2.new(1, 0, 0, 20);
+        Position = UDim2.fromOffset(0, 2),
+        TextXAlignment = Enum.TextXAlignment.Center,
+
         Text = "Keybinds";
-        ZIndex = 103;
-        Parent = KeybindHeader;
+        ZIndex = 104;
+        Parent = KeybindInner;
     })
-
     Library:MakeDraggable(KeybindOuter)
 
-    -- List area — no background
     local KeybindContainer = Library:Create("Frame", {
         BackgroundTransparency = 1;
         Size = UDim2.new(1, 0, 1, -20);
         Position = UDim2.new(0, 0, 0, 20);
-        ZIndex = 101;
-        Parent = KeybindOuter;
+        ZIndex = 1;
+        Parent = KeybindInner;
     })
 
     Library:Create("UIListLayout", {
@@ -6152,56 +6176,87 @@ do
     })
 
     Library:Create("UIPadding", {
-        PaddingLeft = UDim.new(0, 8),
-        PaddingTop = UDim.new(0, 2),
+        PaddingLeft = UDim.new(0, 5),
         Parent = KeybindContainer,
     })
 
     Library.KeybindFrame = KeybindOuter
+    Library.KeybindInner = KeybindInner
     Library.KeybindContainer = KeybindContainer
+    Library:MakeDraggable(KeybindOuter)
+
+    function Library:SetKeybindTransparency(Transparency)
+        Transparency = math.clamp(Transparency or 0, 0, 1)
+        Library.KeybindTransparency = Transparency
+        KeybindOuter.BackgroundTransparency = Transparency
+        KeybindInner.BackgroundTransparency = Transparency
+        ColorFrame.BackgroundTransparency = Transparency
+    end
 end
 
 --// Watermark \\--
 do
     local WatermarkOuter = Library:Create("Frame", {
-        AnchorPoint = Vector2.new(1, 0);
-        BackgroundColor3 = Library.MainColor;
-        BackgroundTransparency = 0.5;
-        BorderSizePixel = 0;
-        Position = UDim2.new(1, -5, 0, 5);
+        BorderColor3 = Color3.new(0, 0, 0);
+        Position = UDim2.new(0, 100, 0, -25);
         Size = UDim2.new(0, 213, 0, 20);
         ZIndex = 200;
         Visible = false;
         Parent = ScreenGui;
     })
 
-    Library:AddToRegistry(WatermarkOuter, {
-        BackgroundColor3 = "MainColor";
-    })
-
-    -- Accent topbar strip
-    local WatermarkAccentBar = Library:Create("Frame", {
-        BackgroundColor3 = Library.AccentColor;
-        BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 2);
+    local WatermarkInner = Library:Create("Frame", {
+        BackgroundColor3 = Library.MainColor;
+        BorderColor3 = Library.AccentColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Size = UDim2.new(1, 0, 1, 0);
         ZIndex = 201;
         Parent = WatermarkOuter;
     })
-    Library:AddToRegistry(WatermarkAccentBar, {
-        BackgroundColor3 = "AccentColor";
-    }, true)
+
+    Library:AddToRegistry(WatermarkInner, {
+        BorderColor3 = "AccentColor";
+    })
+
+    local InnerFrame = Library:Create("Frame", {
+        BackgroundColor3 = Color3.new(1, 1, 1);
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 1, 0, 1);
+        Size = UDim2.new(1, -2, 1, -2);
+        ZIndex = 202;
+        Parent = WatermarkInner;
+    })
+
+    local Gradient = Library:Create("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+            ColorSequenceKeypoint.new(1, Library.MainColor),
+        });
+        Rotation = -90;
+        Parent = InnerFrame;
+    })
+
+    Library:AddToRegistry(Gradient, {
+        Color = function()
+            return ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Library:GetDarkerColor(Library.MainColor)),
+                ColorSequenceKeypoint.new(1, Library.MainColor),
+            })
+        end
+    })
 
     local WatermarkLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 0, 0, 2);
-        Size = UDim2.new(1, 0, 1, -2);
+        Position = UDim2.new(0, 5, 0, 0);
+        Size = UDim2.new(1, -4, 1, 0);
         TextSize = 14;
-        TextXAlignment = Enum.TextXAlignment.Center;
-        ZIndex = 202;
-        Parent = WatermarkOuter;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        ZIndex = 203;
+        Parent = InnerFrame;
     })
 
     Library.Watermark = WatermarkOuter
     Library.WatermarkText = WatermarkLabel
+    Library:MakeDraggable(Library.Watermark)
 
     function Library:SetWatermarkVisibility(Bool)
         Library.Watermark.Visible = Bool
@@ -6209,7 +6264,7 @@ do
 
     function Library:SetWatermark(Text)
         local X, Y = Library:GetTextBounds(Text, Library.Font, 14)
-        Library.Watermark.Size = UDim2.new(0, X + 20, 0, (Y * 1.5) + 3)
+        Library.Watermark.Size = UDim2.new(0, X + 15, 0, (Y * 1.5) + 3)
         Library:SetWatermarkVisibility(true)
 
         Library.WatermarkText.Text = Text
@@ -6299,7 +6354,6 @@ do
             Name = "Notif";
             Parent = Side == "left" and Library.LeftNotificationArea or Library.RightNotificationArea;
         })
-        Library:MakeRounded(NotifyOuter, UDim.new(0, 4))
 
         local NotifyInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
@@ -6309,7 +6363,6 @@ do
             ZIndex = 11001;
             Parent = NotifyOuter;
         })
-        Library:MakeRounded(NotifyInner, UDim.new(0, 4))
 
         Library:AddToRegistry(NotifyInner, {
             BackgroundColor3 = "MainColor";
@@ -6536,7 +6589,6 @@ function Library:CreateWindow(...)
         Parent = ScreenGui;
         Name = "Window";
     })
-    Library:MakeRounded(Outer, UDim.new(0, 6))
     LibraryMainOuterFrame = Outer
     Library:MakeDraggable(Outer, 25, true)
     if WindowInfo.Resizable then Library:MakeResizable(Outer, Library.MinSize) end
@@ -6550,7 +6602,6 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = Outer;
     })
-    Library:MakeRounded(Inner, UDim.new(0, 6))
 
     Library:AddToRegistry(Inner, {
         BackgroundColor3 = "MainColor";
@@ -6558,10 +6609,10 @@ function Library:CreateWindow(...)
     })
 
     local WindowLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 7, 0, 0);
-        Size = UDim2.new(0, 0, 0, 25);
+        Position = UDim2.new(0, 0, 0, 0);
+        Size = UDim2.new(1, 0, 0, 25);
         Text = WindowInfo.Title or "";
-        TextXAlignment = Enum.TextXAlignment.Left;
+        TextXAlignment = Enum.TextXAlignment.Center;
         ZIndex = 1;
         Parent = Inner;
     })
@@ -6574,7 +6625,6 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = Inner;
     })
-    Library:MakeRounded(MainSectionOuter)
 
     Library:AddToRegistry(MainSectionOuter, {
         BackgroundColor3 = "BackgroundColor";
@@ -6590,7 +6640,6 @@ function Library:CreateWindow(...)
         ZIndex = 1;
         Parent = MainSectionOuter;
     })
-    Library:MakeRounded(MainSectionInner)
 
     Library:AddToRegistry(MainSectionInner, {
         BackgroundColor3 = "BackgroundColor";
@@ -6644,7 +6693,6 @@ function Library:CreateWindow(...)
         ZIndex = 2;
         Parent = MainSectionInner;
     })
-    Library:MakeRounded(TabContainer)
     
     local InnerVideoBackground = Library:Create("VideoFrame", {
         BackgroundColor3 = Library.MainColor;
@@ -6744,7 +6792,6 @@ function Library:CreateWindow(...)
             Text = "",
             AutoButtonColor = false,
         })
-        Library:MakeRounded(DialogFrame, UDim.new(0, 6))
 
         local DialogInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor,
@@ -6755,7 +6802,6 @@ function Library:CreateWindow(...)
             ZIndex = 9002,
             Parent = DialogFrame,
         })
-        Library:MakeRounded(DialogInner, UDim.new(0, 6))
 
         Library:AddToRegistry(DialogFrame, {
             BackgroundColor3 = "BackgroundColor",
@@ -7061,7 +7107,6 @@ function Library:CreateWindow(...)
                 ZIndex = 9004,
                 Parent = ButtonContainer,
             })
-            Library:MakeRounded(TextBtn, UDim.new(0, 3))
 
             if Variant == "Primary" then
                 Library:AddToRegistry(TextBtn, { BackgroundColor3 = "MainColor", BorderColor3 = "AccentColor" })
@@ -7212,24 +7257,10 @@ function Library:CreateWindow(...)
             ZIndex = 1;
             Parent = TabArea;
         })
-        Library:MakeRounded(TabButton, UDim.new(0, 3))
 
         Library:AddToRegistry(TabButton, {
             BackgroundColor3 = "BackgroundColor";
             BorderColor3 = "OutlineColor";
-        })
-
-        -- Accent bar shown on active tab
-        local TabAccentBar = Library:Create("Frame", {
-            BackgroundColor3 = Library.AccentColor;
-            BorderSizePixel = 0;
-            Size = UDim2.new(1, 0, 0, 2);
-            ZIndex = 2;
-            Visible = false;
-            Parent = TabButton;
-        })
-        Library:AddToRegistry(TabAccentBar, {
-            BackgroundColor3 = "AccentColor";
         })
 
         local TabButtonLabel = Library:CreateLabel({
@@ -7252,6 +7283,19 @@ function Library:CreateWindow(...)
 
         Library:AddToRegistry(Blocker, {
             BackgroundColor3 = "MainColor";
+        })
+
+        local TabAccentHighlight = Library:Create("Frame", {
+            BackgroundColor3 = Library.AccentColor;
+            BorderSizePixel = 0;
+            Size = UDim2.new(1, 0, 0, 2);
+            ZIndex = 3;
+            Visible = false;
+            Parent = TabButton;
+        })
+
+        Library:AddToRegistry(TabAccentHighlight, {
+            BackgroundColor3 = "AccentColor";
         })
 
         local TabFrame = Library:Create("Frame", {
@@ -7278,7 +7322,6 @@ do
                 Parent = TabFrame;
                 Visible = false;
             })
-            Library:MakeRounded(TopBar)
 
             TopBarInner = Library:Create("Frame", {
                 BackgroundColor3 = Color3.fromRGB(117, 22, 17);
@@ -7289,7 +7332,6 @@ do
                 ZIndex = 4;
                 Parent = TopBar;
             })
-            Library:MakeRounded(TopBarInner)
 
             TopBarHighlight = Library:Create("Frame", {
                 BackgroundColor3 = Color3.fromRGB(255, 75, 75);
@@ -7517,7 +7559,7 @@ end
             Blocker.BackgroundTransparency = 0
             TabButton.BackgroundColor3 = Library.MainColor
             Library.RegistryMap[TabButton].Properties.BackgroundColor3 = "MainColor"
-            TabAccentBar.Visible = true
+            TabAccentHighlight.Visible = true
             TabFrame.Visible = true
 
             Tab:Resize()
@@ -7528,7 +7570,7 @@ end
             Blocker.BackgroundTransparency = 1
             TabButton.BackgroundColor3 = Library.BackgroundColor
             Library.RegistryMap[TabButton].Properties.BackgroundColor3 = "BackgroundColor"
-            TabAccentBar.Visible = false
+            TabAccentHighlight.Visible = false
             TabFrame.Visible = false
         end
         Tab.Hide = Tab.HideTab
@@ -7569,7 +7611,6 @@ end
                 ZIndex = 2;
                 Parent = Info.Side == 1 and LeftSide or RightSide;
             })
-            Library:MakeRounded(BoxOuter)
 
             Library:AddToRegistry(BoxOuter, {
                 BackgroundColor3 = "BackgroundColor";
@@ -7585,7 +7626,6 @@ end
                 ZIndex = 4;
                 Parent = BoxOuter;
             })
-            Library:MakeRounded(BoxInner)
 
             Library:AddToRegistry(BoxInner, {
                 BackgroundColor3 = "BackgroundColor";
@@ -7603,13 +7643,13 @@ end
                 BackgroundColor3 = "AccentColor";
             })
 
-            -- local GroupboxLabel = 
+            -- local GroupboxLabel =
             Library:CreateLabel({
                 Size = UDim2.new(1, 0, 0, 18);
-                Position = UDim2.new(0, 4, 0, 2);
+                Position = UDim2.new(0, 0, 0, 2);
                 TextSize = 14;
                 Text = Info.Name;
-                TextXAlignment = Enum.TextXAlignment.Left;
+                TextXAlignment = Enum.TextXAlignment.Center;
                 ZIndex = 5;
                 Parent = BoxInner;
             })
@@ -7672,7 +7712,6 @@ end
                 ZIndex = 2;
                 Parent = Info.Side == 1 and LeftSide or RightSide;
             })
-            Library:MakeRounded(BoxOuter)
 
             Library:AddToRegistry(BoxOuter, {
                 BackgroundColor3 = "BackgroundColor";
@@ -7688,22 +7727,9 @@ end
                 ZIndex = 4;
                 Parent = BoxOuter;
             })
-            Library:MakeRounded(BoxInner)
 
             Library:AddToRegistry(BoxInner, {
                 BackgroundColor3 = "BackgroundColor";
-            })
-
-            local Highlight = Library:Create("Frame", {
-                BackgroundColor3 = Library.AccentColor;
-                BorderSizePixel = 0;
-                Size = UDim2.new(1, 0, 0, 2);
-                ZIndex = 10;
-                Parent = BoxInner;
-            })
-
-            Library:AddToRegistry(Highlight, {
-                BackgroundColor3 = "AccentColor";
             })
 
             local TabboxButtons = Library:Create("Frame", {
@@ -7765,6 +7791,19 @@ end
                     BackgroundColor3 = "BackgroundColor";
                 })
 
+                local TabboxAccentBar = Library:Create("Frame", {
+                    BackgroundColor3 = Library.AccentColor;
+                    BorderSizePixel = 0;
+                    Size = UDim2.new(1, 0, 0, 2);
+                    ZIndex = 11;
+                    Visible = false;
+                    Parent = Button;
+                })
+
+                Library:AddToRegistry(TabboxAccentBar, {
+                    BackgroundColor3 = "AccentColor";
+                })
+
                 local Container = Library:Create("Frame", {
                     BackgroundTransparency = 1;
                     Position = UDim2.new(0, 4, 0, 20);
@@ -7787,6 +7826,7 @@ end
 
                     Container.Visible = true
                     Block.Visible = true
+                    TabboxAccentBar.Visible = true
 
                     Button.BackgroundColor3 = Library.BackgroundColor
                     Library.RegistryMap[Button].Properties.BackgroundColor3 = "BackgroundColor"
@@ -7797,6 +7837,7 @@ end
                 function Tab:Hide()
                     Container.Visible = false
                     Block.Visible = false
+                    TabboxAccentBar.Visible = false
 
                     Button.BackgroundColor3 = Library.MainColor
                     Library.RegistryMap[Button].Properties.BackgroundColor3 = "MainColor"
@@ -8033,7 +8074,6 @@ end
             Visible = true;
             Parent = ScreenGui;
         })
-        Library:MakeRounded(ToggleUIOuter, UDim.new(0, 4))
     
         local ToggleUIInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
@@ -8104,7 +8144,6 @@ end
             Visible = true;
             Parent = ScreenGui;
         })
-        Library:MakeRounded(LockUIOuter, UDim.new(0, 4))
     
         local LockUIInner = Library:Create("Frame", {
             BackgroundColor3 = Library.MainColor;
